@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceGuard — Real-Time Audio Forensics Dashboard</title>
+  <meta name="description" content="Real-time dual-phase deepfake voice detection engine. Detects AI-generated voice clones in under 10 seconds using spectral ML and mathematical phase forensics." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">🛡️</div>
+      <h1>VoiceGuard <span>· Audio Forensics</span></h1>
+    </div>
+    <div class="header-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Idle — Ready to Analyze</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ STAT CARDS ═══════════════════ -->
+  <div class="pipeline-stats">
+    <div class="glass-card stat-card">
+      <div class="stat-value indigo" id="statChunks">0</div>
+      <div class="stat-label">Chunks Analyzed</div>
+    </div>
+    <div class="glass-card stat-card">
+      <div class="stat-value cyan" id="statLatency">—</div>
+      <div class="stat-label">Avg Latency</div>
+    </div>
+    <div class="glass-card stat-card">
+      <div class="stat-value emerald" id="statAvgScore">—</div>
+      <div class="stat-label">Avg Risk Score</div>
+    </div>
+    <div class="glass-card stat-card">
+      <div class="stat-value amber" id="statPeakRisk">—</div>
+      <div class="stat-label">Peak Risk</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MAIN GRID ═══════════════════ -->
+  <div class="dashboard-grid" style="margin-top: 20px;">
+
+    <!-- ──── Control Bar ──── -->
+    <div class="glass-card control-bar">
+      <button class="btn btn-primary" id="btnStart">
+        <span>🎙️</span> Start Analysis
+      </button>
+      <button class="btn btn-danger" id="btnStop" disabled>
+        <span>⏹️</span> Stop
+      </button>
+      <div class="session-timer" id="sessionTimer">00:00</div>
+    </div>
+
+    <!-- ──── Spectrogram ──── -->
+    <div class="glass-card spectrogram-card">
+      <div class="card-header">
+        <span class="icon">📊</span> Live Spectrogram
+      </div>
+      <div class="card-body">
+        <div class="spectrogram-wrapper">
+          <canvas id="spectrogramCanvas"></canvas>
+          <div class="spectrogram-overlay">
+            <span>0 Hz</span>
+            <span>→ Frequency →</span>
+            <span>8 kHz</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── Verdict Panel ──── -->
+    <div class="glass-card verdict-panel">
+      <div class="card-header">
+        <span class="icon">🎯</span> Live Verdict
+      </div>
+      <div class="card-body">
+        <div class="verdict-display">
+          <!-- Ring Gauge -->
+          <div class="verdict-ring">
+            <svg viewBox="0 0 180 180">
+              <circle class="ring-bg" cx="90" cy="90" r="80" />
+              <circle class="ring-value" id="ringValue" cx="90" cy="90" r="80" />
+            </svg>
+            <div class="ring-label">
+              <span class="ring-score" id="ringScore">0</span>
+              <span class="ring-unit">Risk Score</span>
+            </div>
+          </div>
+
+          <!-- Verdict Badge -->
+          <div class="verdict-label human" id="verdictLabel">AWAITING INPUT</div>
+        </div>
+
+        <!-- Score Breakdown -->
+        <div class="score-bars">
+          <div class="score-bar-item">
+            <label>
+              <span>🧠 Spectral ML (AASIST-L)</span>
+              <span id="valSpectral">0.0%</span>
+            </label>
+            <div class="score-bar-track">
+              <div class="score-bar-fill" id="barSpectral" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="score-bar-item">
+            <label>
+              <span>📐 Phase Forensics (IF+CGD)</span>
+              <span id="valPhase">0.0%</span>
+            </label>
+            <div class="score-bar-track">
+              <div class="score-bar-fill phase" id="barPhase" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──── Analysis Timeline ──── -->
+    <div class="glass-card timeline-card">
+      <div class="card-header">
+        <span class="icon">⏱️</span> Analysis Timeline
+      </div>
+      <div class="card-body">
+        <div class="timeline-list" id="timelineList">
+          <div class="waiting-state">
+            <div class="waiting-icon">🔇</div>
+            <div>Click <strong>Start Analysis</strong> to begin real-time voice forensics</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dashboard-grid -->
+
+  <!-- ═══════════════════ ARCHITECTURE FOOTER ═══════════════════ -->
+  <div class="pipeline-stats" style="margin-top: 20px;">
+    <div class="glass-card stat-card">
+      <div class="stat-value indigo">~85K</div>
+      <div class="stat-label">Model Parameters</div>
+    </div>
+    <div class="glass-card stat-card">
+      <div class="stat-value cyan">&lt;1ms</div>
+      <div class="stat-label">ONNX Execution</div>
+    </div>
+    <div class="glass-card stat-card">
+      <div class="stat-value emerald">500ms</div>
+      <div class="stat-label">Chunk Window</div>
+    </div>
+    <div class="glass-card stat-card">
+      <div class="stat-value amber">0</div>
+      <div class="stat-label">GPU Resources</div>
+    </div>
+  </div>
+
+</div><!-- /app-container -->
+
+<script src="app.js"></script>
+</body>
+</html>
