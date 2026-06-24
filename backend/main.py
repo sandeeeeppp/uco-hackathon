@@ -161,24 +161,11 @@ async def websocket_audio_endpoint(ws: WebSocket):
 # ------------------------------------------------------------------ #
 def _decode_audio(raw_bytes: bytes) -> np.ndarray | None:
     """
-    Decode an incoming audio chunk from WebM/Opus, WAV, or raw PCM
-    entirely in-memory (no disk I/O).
+    Decode raw Float32 PCM incoming directly from the browser.
     """
-    # Try soundfile first (handles WAV, FLAC, OGG, etc.)
-    try:
-        audio, sr = sf.read(io.BytesIO(raw_bytes))
-        if len(audio.shape) > 1:
-            audio = audio.mean(axis=1)  # stereo → mono
-        if sr != SAMPLE_RATE:
-            import librosa
-            audio = librosa.resample(audio, orig_sr=sr, target_sr=SAMPLE_RATE)
-        return audio.astype(np.float32)
-    except Exception:
-        pass
-
-    # Fallback: treat as raw PCM float32
     try:
         audio = np.frombuffer(raw_bytes, dtype=np.float32)
+        audio = np.nan_to_num(audio) # Clean any NaNs
         if len(audio) > 0:
             return audio
     except Exception:

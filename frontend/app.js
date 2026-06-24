@@ -262,24 +262,35 @@
       // Connect WebSocket
       await connectWebSocket();
 
-      // MediaRecorder with WebM/Opus codec
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : 'audio/webm';
+      // Capture Raw PCM using ScriptProcessor
+      const bufferSize = 4096;
+      mediaRecorder = audioContext.createScriptProcessor(bufferSize, 1, 1);
+      
+      let pcmBuffer = [];
+      const samplesPerChunk = Math.floor(SAMPLE_RATE * (CHUNK_INTERVAL_MS / 1000));
 
-      mediaRecorder = new MediaRecorder(stream, {
-        mimeType,
-        audioBitsPerSecond: 64000,
-      });
-
-      // Send 500ms chunks via WebSocket
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(event.data);
+      mediaRecorder.onaudioprocess = (e) => {
+        if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
+        
+        const inputData = e.inputBuffer.getChannelData(0);
+        for (let i = 0; i < inputData.length; i++) {
+          pcmBuffer.push(inputData[i]);
+        }
+        
+        while (pcmBuffer.length >= samplesPerChunk) {
+          const chunkSamples = pcmBuffer.slice(0, samplesPerChunk);
+          pcmBuffer = pcmBuffer.slice(samplesPerChunk);
+          const float32Array = new Float32Array(chunkSamples);
+          ws.send(float32Array.buffer);
         }
       };
 
-      mediaRecorder.start(CHUNK_INTERVAL_MS);
+      const silentGain = audioContext.createGain();
+      silentGain.gain.value = 0;
+      
+      sourceNode.connect(mediaRecorder);
+      mediaRecorder.connect(silentGain);
+      silentGain.connect(audioContext.destination);
       isRecording = true;
 
       // Update UI
@@ -306,9 +317,15 @@
   function stopRecording() {
     isRecording = false;
 
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    if (mediaRecorder && mediaRecorder.disconnect) {
+      mediaRecorder.disconnect();
+    } else if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    }
+    
+    // Stop mic stream
+    if (sourceNode && sourceNode.mediaStream) {
+       sourceNode.mediaStream.getTracks().forEach(t => t.stop());
     }
 
     if (audioContext) {
