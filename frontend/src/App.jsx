@@ -167,7 +167,7 @@ export default function App() {
 
         <div className="panel" style={{flex: '1', minHeight: 0}}>
           <div className="panel-header">SYS_DATA_FEED</div>
-          <DataFeed history={history} />
+          <DataFeed history={history} isRecording={isRecording} />
         </div>
       </div>
     </div>
